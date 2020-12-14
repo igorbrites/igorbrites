@@ -10,4 +10,4 @@
 
 Hi! I'm Igor! Welcome to my GitHub profile! :smile:
 
-I'm an Site Reliability Engineer, currently working at [@ContaAzul](https://github.com/ContaAzul).
+I'm an Site Reliability Engineer, currently working at [Banco Inter](https://bancointer.com.br).
