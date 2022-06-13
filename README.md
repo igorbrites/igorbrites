@@ -8,6 +8,4 @@
 [![Instagram](https://img.shields.io/badge/-@fn3147-555?logo=instagram&style=for-the-badge)](https://instagram.com/fn3147)
 
 
-Hi! I'm Igor! Welcome to my GitHub profile! :smile:
-
-I'm an Site Reliability Engineer, currently working at [Banco Inter](https://bancointer.com.br).
+![GitHub Metrics](github-metrics.svg)
