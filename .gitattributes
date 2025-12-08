@@ -1,0 +1,3 @@
+# Mark generated files as generated for GitHub
+generated/* linguist-generated=true
+
