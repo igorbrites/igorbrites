@@ -143,10 +143,10 @@ query {
       totalCount
     }
     contributionsCollection {
-      totalCommitContributions
-      totalPullRequestContributions
+      contributionCalendar {
+        totalContributions
+      }
       totalPullRequestReviewContributions
-      totalIssueContributions
       contributionYears
     }
   }
@@ -500,7 +500,18 @@ Languages:
         if self._total_contributions is not None:
             return self._total_contributions
 
+        await self._fetch_yearly_stats()
+        return cast(int, self._total_contributions)
+
+    async def _fetch_yearly_stats(self) -> None:
+        """
+        Fetch contribution stats across all years
+        """
+        if self._total_contributions is not None:
+            return
+
         self._total_contributions = 0
+
         years = (
             (await self.queries.query(Queries.contrib_years()))
             .get("data", {})
@@ -518,7 +529,6 @@ Languages:
             self._total_contributions += year.get("contributionCalendar", {}).get(
                 "totalContributions", 0
             )
-        return cast(int, self._total_contributions)
 
     @property
     async def lines_changed(self) -> Tuple[int, int]:
@@ -552,8 +562,9 @@ Languages:
         self._account_created = viewer.get("createdAt", "")
 
         contrib = viewer.get("contributionsCollection", {})
-        self._commits = contrib.get("totalCommitContributions", 0)
         self._pr_reviews = contrib.get("totalPullRequestReviewContributions", 0)
+        # Contributions this year from calendar (includes private contributions!)
+        self._commits = contrib.get("contributionCalendar", {}).get("totalContributions", 0)
 
         years = contrib.get("contributionYears", [])
         self._years_active = len(years) if years else 0
@@ -588,9 +599,9 @@ Languages:
         return self._pr_reviews or 0
 
     @property
-    async def commits(self) -> int:
+    async def contributions_this_year(self) -> int:
         """
-        :return: total number of commits (current year from contributionsCollection)
+        :return: total contributions this year (commits, PRs, issues, reviews - includes private!)
         """
         if self._commits is None:
             await self.get_user_stats()

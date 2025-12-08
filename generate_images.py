@@ -39,7 +39,7 @@ async def generate_overview(s: Stats) -> None:
     output = re.sub("{{ stars }}", f"{await s.stargazers:,}", output)
     output = re.sub("{{ forks }}", f"{await s.forks:,}", output)
     output = re.sub("{{ contributions }}", f"{await s.total_contributions:,}", output)
-    output = re.sub("{{ commits }}", f"{await s.commits:,}", output)
+    output = re.sub("{{ contributions_this_year }}", f"{await s.contributions_this_year:,}", output)
     output = re.sub("{{ pull_requests }}", f"{await s.pull_requests:,}", output)
     output = re.sub("{{ issues }}", f"{await s.issues:,}", output)
     output = re.sub("{{ pr_reviews }}", f"{await s.pr_reviews:,}", output)
