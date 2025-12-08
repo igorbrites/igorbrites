@@ -390,17 +390,30 @@ Languages:
                 self._stargazers += repo.get("stargazers").get("totalCount", 0)
                 self._forks += repo.get("forkCount", 0)
 
-                for lang in repo.get("languages", {}).get("edges", []):
-                    name = lang.get("node", {}).get("name", "Other")
+                repo_name = repo.get("nameWithOwner")
+                repo_langs = repo.get("languages", {}).get("edges", [])
+                
+                # Debug: Show all repos and their detected languages
+                if repo_langs:
+                    lang_list = [f"{l.get('node', {}).get('name', '?')}:{l.get('size', 0)}" for l in repo_langs]
+                    print(f"DEBUG REPO: {repo_name} -> {', '.join(lang_list)}")
+                else:
+                    print(f"DEBUG REPO: {repo_name} -> NO LANGUAGES DETECTED")
+                
+                for lang in repo_langs:
+                    lang_name = lang.get("node", {}).get("name", "Other")
+                    lang_size = lang.get("size", 0)
                     languages = await self.languages
-                    if name.lower() in exclude_langs_lower:
+                    if lang_name.lower() in exclude_langs_lower:
                         continue
-                    if name in languages:
-                        languages[name]["size"] += lang.get("size", 0)
-                        languages[name]["occurrences"] += 1
+                    
+                    
+                    if lang_name in languages:
+                        languages[lang_name]["size"] += lang_size
+                        languages[lang_name]["occurrences"] += 1
                     else:
-                        languages[name] = {
-                            "size": lang.get("size", 0),
+                        languages[lang_name] = {
+                            "size": lang_size,
                             "occurrences": 1,
                             "color": lang.get("node", {}).get("color"),
                         }
@@ -422,6 +435,12 @@ Languages:
         langs_total = sum([v.get("size", 0) for v in self._languages.values()])
         for k, v in self._languages.items():
             v["prop"] = 100 * (v.get("size", 0) / langs_total)
+        
+        # Debug: Show final language summary
+        print("\nDEBUG LANG SUMMARY:")
+        sorted_langs = sorted(self._languages.items(), key=lambda x: x[1].get("size", 0), reverse=True)
+        for lang, data in sorted_langs[:15]:  # Top 15
+            print(f"  {lang}: {data.get('size', 0):,} bytes ({data.get('prop', 0):.2f}%)")
 
     @property
     async def name(self) -> str:
@@ -522,6 +541,7 @@ Languages:
         # Get current year
         from datetime import datetime
         current_year = str(datetime.now().year)
+        
         
         by_year_result = await self.queries.query(Queries.all_contribs(years))
         viewer_data = by_year_result.get("data", {}).get("viewer", {})

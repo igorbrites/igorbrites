@@ -35,6 +35,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Exclude forked repos from stats (set to false to include them)
           EXCLUDE_FORKED_REPOS: true
+          # Exclude these repos from stats (comma-separated, owner/repo format)
+          EXCLUDED: "dascbh/momentum,dascbh/bitcompre"
+          # Exclude these languages from the language stats
+          EXCLUDED_LANGS: "HTML,CSS,JavaScript,SCSS,Mustache,MQL5,PHP,Java,Pug,Less,PLpgSQL"
 
       - name: Commit to the repo
         run: |
