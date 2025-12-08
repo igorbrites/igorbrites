@@ -143,9 +143,6 @@ query {
       totalCount
     }
     contributionsCollection {
-      contributionCalendar {
-        totalContributions
-      }
       totalPullRequestReviewContributions
       contributionYears
     }
@@ -306,6 +303,7 @@ class Stats(object):
         self._stargazers: Optional[int] = None
         self._forks: Optional[int] = None
         self._total_contributions: Optional[int] = None
+        self._contributions_this_year: Optional[int] = None
         self._languages: Optional[Dict[str, Any]] = None
         self._repos: Optional[Set[str]] = None
         self._lines_changed: Optional[Tuple[int, int]] = None
@@ -314,7 +312,6 @@ class Stats(object):
         self._pull_requests: Optional[int] = None
         self._issues: Optional[int] = None
         self._pr_reviews: Optional[int] = None
-        self._commits: Optional[int] = None
         self._followers: Optional[int] = None
         self._years_active: Optional[int] = None
         self._account_created: Optional[str] = None
@@ -511,24 +508,33 @@ Languages:
             return
 
         self._total_contributions = 0
+        self._contributions_this_year = 0
 
+        years_result = await self.queries.query(Queries.contrib_years())
         years = (
-            (await self.queries.query(Queries.contrib_years()))
+            years_result
             .get("data", {})
             .get("viewer", {})
             .get("contributionsCollection", {})
             .get("contributionYears", [])
         )
-        by_year = (
-            (await self.queries.query(Queries.all_contribs(years)))
-            .get("data", {})
-            .get("viewer", {})
-            .values()
-        )
-        for year in by_year:
-            self._total_contributions += year.get("contributionCalendar", {}).get(
-                "totalContributions", 0
-            )
+        
+        # Get current year
+        from datetime import datetime
+        current_year = str(datetime.now().year)
+        
+        by_year_result = await self.queries.query(Queries.all_contribs(years))
+        viewer_data = by_year_result.get("data", {}).get("viewer", {})
+        
+        for year in years:
+            year_key = f"year{year}"
+            year_data = viewer_data.get(year_key, {})
+            contributions = year_data.get("contributionCalendar", {}).get("totalContributions", 0)
+            self._total_contributions += contributions
+            
+            # Track current year separately
+            if str(year) == current_year:
+                self._contributions_this_year = contributions
 
     @property
     async def lines_changed(self) -> Tuple[int, int]:
@@ -563,8 +569,6 @@ Languages:
 
         contrib = viewer.get("contributionsCollection", {})
         self._pr_reviews = contrib.get("totalPullRequestReviewContributions", 0)
-        # Contributions this year from calendar (includes private contributions!)
-        self._commits = contrib.get("contributionCalendar", {}).get("totalContributions", 0)
 
         years = contrib.get("contributionYears", [])
         self._years_active = len(years) if years else 0
@@ -603,9 +607,9 @@ Languages:
         """
         :return: total contributions this year (commits, PRs, issues, reviews - includes private!)
         """
-        if self._commits is None:
-            await self.get_user_stats()
-        return self._commits or 0
+        if self._contributions_this_year is None:
+            await self._fetch_yearly_stats()
+        return self._contributions_this_year or 0
 
     @property
     async def followers(self) -> int:
